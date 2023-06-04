@@ -1,0 +1,163 @@
+﻿<html>
+<head>
+    <title>UDP Mouse Web Server</title>
+    <script>
+
+        function testDeviceOrientation() {
+            if (typeof DeviceOrientationEvent !== 'function') {
+                return setResult('DeviceOrientationEvent not detected')
+            }
+            if (typeof DeviceOrientationEvent.requestPermission !== 'function') {
+                return setResult('DeviceOrientationEvent.requestPermission not detected')
+            }
+            DeviceOrientationEvent.requestPermission().then(function (result) {
+                return setResult(result);
+            });
+        }
+
+        function setResult(result) {
+            document.getElementById('result').innerHTML = 'RESULT: ' + result;
+        }
+
+        var alpha;
+        var beta;
+        var gamma;
+
+        window.addEventListener("deviceorientation", handleOrientation, true);
+        var MousePosition;
+        function handleOrientation(event) {
+            var absolute = event.absolute;
+            alpha = event.alpha;
+            beta = event.beta;
+            gamma = event.gamma;
+
+            document.getElementById("absolute").innerHTML = absolute;
+            document.getElementById("alpha").innerHTML = alpha;
+            document.getElementById("beta").innerHTML = beta;
+            document.getElementById("gamma").innerHTML = gamma;
+
+            MousePosition = GetMousePosition();
+            if (MousePosition.isValid) {
+                SendMousePosition(MousePosition.x, MousePosition.y);
+            }
+        }
+
+        var panMin, panMax, tiltMin, tiltMax;
+
+        function SendClick() {
+
+            if (MousePosition.isValid) {
+                const xhttp = new XMLHttpRequest();
+                xhttp.open("GET", "/click?x=" + MousePosition.x + "&y=" + MousePosition.y, true);
+                xhttp.send();
+            }
+           
+        }
+
+        function SendMousePosition(x, y) {
+            const xhttp = new XMLHttpRequest();
+            xhttp.open("GET", "/move?x=" + x + "&y=" + y, true);
+            xhttp.send();
+        }
+
+        function SendDoubleClick() {
+            if (MousePosition.isValid) {
+                const xhttp = new XMLHttpRequest();
+                xhttp.open("GET", "/dblclick?x=" + MousePosition.x + "&y=" + MousePosition.y, true);
+                xhttp.send();
+            }
+        }
+
+        function SetUpperLeft() {
+            panMin = alpha;
+            tiltMax = beta;
+            document.getElementById("ymax").innerHTML = beta;
+            document.getElementById("xmin").innerHTML = alpha;
+        }
+
+        function SetLowerRight() {
+            tiltMin = beta;
+            panMax = alpha;
+            document.getElementById("ymin").innerHTML = beta;
+            document.getElementById("xmax").innerHTML = alpha;
+        }
+
+        function GetMousePosition() {
+            let currentTilt = beta;
+            let relativeTilt = currentTilt - tiltMin;
+            let tiltRange = (tiltMax - tiltMin);
+            let ScreenY = relativeTilt * 1080 / tiltRange;
+            ScreenY = Math.max(0, Math.min(ScreenY, 1080));
+            ScreenY = 1080 - Math.trunc(ScreenY);
+
+            let currentPan = alpha;
+            let relativePan = currentPan - panMin;
+            let panRange = (panMax - panMin);
+            let ScreenX = relativePan * 1920 / panRange;
+            ScreenX = Math.max(0, Math.min(ScreenX, 1920));
+            ScreenX = Math.trunc(ScreenX);
+
+            if (isNaN(ScreenX) == false && isNaN(ScreenY) == false) {
+                document.getElementById("screenY").innerHTML = ScreenY;
+                document.getElementById("screenX").innerHTML = ScreenX;
+
+                document.getElementById("absolute").style.display = "none";
+                document.getElementById("alpha").style.display = "none";
+                document.getElementById("beta").style.display = "none";
+                document.getElementById("gamma").style.display = "none";
+                document.getElementById("result").style.display = "none";
+                document.getElementById("ymin").style.display = "none";
+                document.getElementById("ymax").style.display = "none";
+                document.getElementById("xmin").style.display = "none";
+                document.getElementById("xmax").style.display = "none";
+                document.getElementById("btnUL").style.display = "none";
+                document.getElementById("btnUR").style.display = "none";
+
+                return {
+                    'x': ScreenX,
+                    'y': ScreenY,
+                    'isValid': true
+                };
+
+            }
+            else {
+                if (isNaN(ScreenY)) {
+                    document.getElementById("screenX").innerHTML = "Unknown";
+                }
+                if (isNaN(ScreenX)) {
+                    document.getElementById("screenY").innerHTML = "Unknown";
+                }
+
+                return {
+                    'x': 0,
+                    'y': 0,
+                    'isValid': false
+                };
+
+            }
+
+        }
+        
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <div id="absolute"></div>
+    <div id="alpha"></div>
+    <div id="beta"></div>
+    <div id="gamma"></div>
+    <div id="result"></div>
+    <div id="xmin"></div>
+    <div id="xmax"></div>
+    <div id="ymin"></div>
+    <div id="ymax"></div>
+
+    <div id="screenX"></div>
+    <div id="screenY"></div>
+
+    <button id="btnUL" onclick="SetUpperLeft()">SET Upper Left</button>
+    <button id="btnUR" onclick="SetLowerRight()">SET Lower Right</button>
+    <button onclick="SendClick()" style="height:500px;width:500px">CLICK</button>
+    <button onclick="SendDoubleClick()">DOUBLE CLICK</button>
+</body>
+</html>
