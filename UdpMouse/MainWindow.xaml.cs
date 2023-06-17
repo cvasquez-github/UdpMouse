@@ -14,6 +14,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Hardcodet.Wpf.TaskbarNotification;
 using Newtonsoft.Json;
 using SimpleUdp;
 
@@ -45,6 +46,7 @@ namespace UdpMouse
 
         UdpEndpoint udpServer;
         UdpMouseWebServer webServer;
+        TaskbarIcon tbi;
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
             udpServer = new UdpEndpoint("127.0.0.1", 8000);
@@ -53,6 +55,10 @@ namespace UdpMouse
             udpServer.Start();
 
             webServer = new UdpMouseWebServer(5000, this);
+
+            tbi = new TaskbarIcon();
+            tbi.ToolTipText = "Udp Mouse";
+            this.Hide();
         }
 
         private void DatagramReceived(object sender, Datagram dg)
